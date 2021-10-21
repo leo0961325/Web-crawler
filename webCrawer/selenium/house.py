@@ -5,10 +5,23 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import ActionChains
+import pymysql
+import datetime
+
 
 PATH = "C:/Users/M4610-1/chromedriver.exe"
 driver = webdriver.Chrome(PATH)
 driver.get("https://591.com.tw/")
+
+# 資料庫參數設定
+db_settings = {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "leo77777",
+    "db": "house",
+    "charset": "utf8"
+}
 
 WebDriverWait(driver, 10).until(  # 等20到看板的class出現後再去取得
     EC.presence_of_element_located((By.CLASS_NAME, "area-box-title"))
@@ -68,9 +81,44 @@ def run():
                     if (None != driver.find_element(By.CLASS_NAME, 'info-host-word')):
                         phone_number = driver.find_element(By.CLASS_NAME, 'info-host-word')
                         print(phone_number.text)
+                    try:
+                        # 建立Connection物件
+                        conn = pymysql.connect(**db_settings)
+                        # 建立Cursor物件
+                        with conn.cursor() as cursor:
+                            # 新增資料SQL語法
+                            command = "SELECT * FROM house_info"
+                            cursor.execute(command)
+                            date_now = datetime.datetime.now()
+                            # 取得所有資料
+
+                            result = cursor.fetchall()
+                            result_list = list(result)
+                            phone_num_list = []
+                            for r in result_list:
+                                id = r[0]
+                                name = r[1]
+                                phone_num = r[2]
+                                phone_num_list.append(phone_num)
+                                print(id, name, phone_number)
+
+                            if (phone_number not in phone_num_list):
+                                command = "INSERT IGNORE INTO house_info(name, phone_number,date_time)VALUES(%s, %s,%s) "
+                                cursor.execute(
+                                     command, (host_name.text, phone_number.text, date_now)
+                                )
+                                # 儲存變更
+                                conn.commit()
+                    except Exception as ex:
+                        print(ex)
+                    finally:
+                        conn.close();
                 except:
                     print("建商案>>>>>>>>>")
                     pass
+
+
+
 
                 # 關閉當前窗口B
                 driver.close()
