@@ -1,4 +1,5 @@
 import pymysql
+import datetime
 
 # 資料庫參數設定
 db_settings = {
@@ -16,16 +17,26 @@ try:
     # 建立Cursor物件
     with conn.cursor() as cursor:
         # 新增資料SQL語法
-        command = "SELECT phone_number FROM info"
+        command = "SELECT * FROM house_info"
         cursor.execute(command)
+
+        add_phone = '0979-611-629'
+        date_now = datetime.datetime.now()
         # 取得所有資料
         result = cursor.fetchall()
-        print(result)
-        add_phone = '0979-611-619'
-        if (add_phone not in result):
-            command = "INSERT IGNORE INTO info(name, phone_number )VALUES(%s, %s) "
+        result_list = list(result)
+        phone_num_list = []
+        for r in result_list:
+            id = r[0]
+            name = r[1]
+            phone_number = r[2]
+            phone_num_list.append(phone_number)
+            print(id , name , phone_number)
+
+        if (add_phone not in phone_num_list):
+            command = "INSERT IGNORE INTO house_info(name, phone_number,date_time)VALUES(%s, %s,%s) "
             cursor.execute(
-                command,("make",add_phone)
+            command,("make",add_phone,date_now)
             )
             # 儲存變更
             conn.commit()
